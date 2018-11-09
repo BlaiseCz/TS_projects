@@ -13,6 +13,10 @@ namespace ClientUDP
 
         public void setOperation(ref uint data, uint operation) //data - zmienna na której chcemy operować, operation - zmienna która chcemy wrzucic do pola Operation
         {
+
+            if (operation > 63) //jezeli liczba jest za duza - przekracza 6 bitów - nie wykonuje tej funkcji
+                return; //wychodzi z funkcji
+
             this.data = data;
             const uint mask = 0b11111100000000000000000000000000; //moja maska pola operacji
             const uint negM = 0b00000011111111111111111111111111; //zanegowana maska pola operacji
@@ -43,6 +47,9 @@ namespace ClientUDP
 
         public void setAnswer(ref uint data, uint answer) //data - zmienna na której chcemy operować, Answer - zmienna która chcemy wrzucic do pola answer
         {
+            if (answer > 15) //jezeli liczba jest za duza - przekracza 4 bity - nie wykonuje tej funkcji
+                return; //wychodzi z funkcji
+
             this.data = data;
             const uint mask = 0b00000011110000000000000000000000; //moja maska pola answer
             const uint negM = 0b11111100001111111111111111111111; //zanegowana maska pola answer
@@ -74,6 +81,9 @@ namespace ClientUDP
 
         public void setID(ref uint data, uint id) //data - zmienna na której chcemy operować, id - zmienna która chcemy wrzucic do pola identyfikator
         {
+            if (id > 255) //jezeli liczba ID jest za duza - przekracza 8 bitów - nie wykonuje tej funkcji
+                return; //wychodzi z funkcji
+
             this.data = data;
             const uint mask = 0b00000000001111111100000000000000; //moja maska pola id
             const uint negM = 0b11111111110000000011111111111111; //zanegowana maska pola id
@@ -118,7 +128,3 @@ namespace ClientUDP
     }
 }
 
-/*
- * SPRAWDZ CZY WARTOŚĆ KTORA CHCE WPISAC NIE JEST ZA DUZA!
- * 
- */
