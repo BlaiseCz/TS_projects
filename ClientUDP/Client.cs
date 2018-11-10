@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.IO;
 using System.Text;
 
-namespace ClientUDPv2
+namespace ClientUDP
 {
     class Client
     {
@@ -13,24 +13,17 @@ namespace ClientUDPv2
         //static readonly String SERVER_IP = "192.168.43.152";
         IPEndPoint ipep = new IPEndPoint(IPAddress.Parse(SERVER_IP), PORT_NR);
 
-
-        void send(int tmp)
+        //funkcja do wysylania intow
+        void send(uint tmp)
         {
-            UdpClient client = new UdpClient(SERVER_IP, PORT_NR);
+            UdpClient client = new UdpClient(SERVER_IP, PORT_NR); // tworzymy socket
            
-            byte[] dataToSend = BitConverter.GetBytes(tmp);
+            byte[] dataToSend = BitConverter.GetBytes(tmp); //zamieniamy dane, które chcemy wysłać, na tablice bajtow
 
-            if(BitConverter.IsLittleEndian)
+            if(BitConverter.IsLittleEndian) //zamieniamy liczbe zapisaną w tablicy z danymi z formatu LittleEndian na BigEndian
                 Array.Reverse(dataToSend);
-            
 
-            foreach (byte x in dataToSend)
-                Console.Write(x + " ");
-
-            Console.WriteLine();
-
-            client.Send(dataToSend, dataToSend.Length);
-            
+            client.Send(dataToSend, dataToSend.Length); //wysyla dane   
         }
 
         void send(String tmp)
@@ -44,36 +37,25 @@ namespace ClientUDPv2
         {
             IntOperations operacje = new IntOperations();
             uint data = 0;
-            operacje.setOperation(ref data, 32);
+            operacje.setOperation(ref data, 62);
             operacje.setAnswer(ref data, 13);
             operacje.setID(ref data, 54);
-            Console.Write("Operation Field: {0}" +
-                          "\nAnswer Field: {1}" +
-                          "\nID Field: {2}" +
-                          "\nBinary Data Number: {3}" +
-                          "\nBinary Operation Field: {4}" +
-                          "\nBinary Answer Field: {5}" +
-                          "\nBinary ID Field: {6}",
-                          operacje.getOperation(ref data),
-                          operacje.getAnswer(ref data),
-                          operacje.getID(ref data),
-                          operacje.convertToBinary(data),
-                          operacje.convertToBinary(operacje.getOperation(ref data)),
-                          operacje.convertToBinary(operacje.getAnswer(ref data)),
-                          operacje.convertToBinary(operacje.getID(ref data))
-                          );
+            operacje.printAllFields(ref data);
 
 
-            /*
-            Console.WriteLine("Client running...");
+
+            Console.WriteLine("\n\nClient running...");
+
             while (true){
                 String tmp = Console.ReadLine();
                 Client client = new Client();
-                int x = Convert.ToInt32(tmp);
-                client.send(x);
+                
+                if (tmp.Length <= 0)
+                    continue;
 
+                uint x = Convert.ToUInt32(tmp); //tutaj jak się poda SŁOWO a nie LICZBĘ to wywala exception!
+                client.send(data);
             }
-            */
         }
     }
 }
