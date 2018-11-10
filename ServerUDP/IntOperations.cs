@@ -6,6 +6,7 @@ namespace ServerUDP
      * Pole operacji - 6bit
      * Pole odpowiedzi - 4 bit
      * Pole identyfikatora - 8 bit
+     * Reszta - póki co same 0
      */
     public class IntOperations
     {
@@ -28,13 +29,7 @@ namespace ServerUDP
 
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
-            data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
-
-            Console.WriteLine(
-                "Binary int y: {0}" +
-                "\nBinary int data: {1}",
-                convertToBinary(y), convertToBinary(data)
-            );
+            data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacj
         }
 
         public uint getOperation(ref uint data){
@@ -62,12 +57,6 @@ namespace ServerUDP
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
             data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
-
-            Console.WriteLine(
-                "Binary int y: {0}" +
-                "\nBinary int data: {1}",
-                convertToBinary(y), convertToBinary(data)
-            );
         }
 
         public uint getAnswer(ref uint data)
@@ -96,12 +85,6 @@ namespace ServerUDP
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
             data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
-
-            Console.WriteLine(
-                "Binary int y: {0}" +
-                "\nBinary int data: {1}",
-                convertToBinary(y), convertToBinary(data)
-            );
         }
 
         public uint getID(ref uint data)
@@ -120,6 +103,30 @@ namespace ServerUDP
 
             String result = Convert.ToString(Convert.ToInt32(number, fromBase), toBase);
             return result;
+        }
+
+        public void setAllFields(ref uint data, uint operation, uint answer, uint ID){
+            setOperation(ref data, operation);
+            setAnswer(ref data, answer);
+            setID(ref data, ID);
+        }
+
+        public void printAllFields(ref uint data){
+            Console.Write("Operation Field: {0}" +
+                          "\nAnswer Field: {1}" +
+                          "\nID Field: {2}" +
+                          "\nBinary Data Number: {3}" +
+                          "\nBinary Operation Field: {4}" +
+                          "\nBinary Answer Field: {5}" +
+                          "\nBinary ID Field: {6}",
+                          getOperation(ref data),
+                          getAnswer(ref data),
+                          getID(ref data),
+                          convertToBinary(data),
+                          convertToBinary(getOperation(ref data)),
+                          convertToBinary(getAnswer(ref data)),
+                          convertToBinary(getID(ref data))
+                          );
         }
 
 
