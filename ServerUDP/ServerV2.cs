@@ -10,6 +10,29 @@ namespace ServerUDPv2
     {
         static readonly int port = 8080;
 
+        private byte genrateID() 
+        {
+            byte ID;
+            Random rand = new Random();
+            ID = (byte)rand.Next(0, 255);
+            return ID;
+        }
+
+        public int remainigTime(int id1, int id2)   // [(id.sesji 1 + id.sesji 2) * 99] % 100 + 30
+        {
+            return ((id1 + id2) * 99) % 100 + 30;
+        }
+
+        private int secretNum()
+        {
+            Random rand = new Random();
+            return rand.Next(0, 127);
+        }
+        //cykliczne przesyłanie komunikatów z informacją, ile czasu pozostało do zakończenia (co 10 sekund),
+        void receive()
+        {
+
+        }
         internal static void Main(string[] args)
         {
             IntOperations operacje = new IntOperations();
