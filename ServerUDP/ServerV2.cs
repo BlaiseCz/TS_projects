@@ -3,21 +3,22 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 
-
 namespace ServerUDPv2
 {
+
     class MainClass
     {
-        /*
-         * wygenerowanie identyfikatora sesji,
-        o wyznaczenie maksymalnego czasu trwania rozgrywki:
-        •  [(id. sesji 1 + id. sesji 2) * 99] % 100 + 30
-
-         */
         static readonly int port = 8080;
-        public int SessionID { get; }
+
         internal static void Main(string[] args)
         {
+            IntOperations operacje = new IntOperations();
+            uint data_ = 0;
+            operacje.setOperation(ref data_, 62);
+            operacje.setAnswer(ref data_, 13);
+            operacje.setID(ref data_, 54);
+            operacje.printAllFields(ref data_);
+
 
             Console.WriteLine("I'm a server!");
             int recv = 0; //otrzymane dane
@@ -27,9 +28,10 @@ namespace ServerUDPv2
 
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
-
+            /*
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(receivedBytes);
+            */
 
             socket.Bind(endpoint);// Bindowanie jakiekolwiek przychodzące połaczenie do tego gniazda
 
@@ -41,9 +43,6 @@ namespace ServerUDPv2
             recv = socket.ReceiveFrom(data, ref tmpRemote);
             Console.WriteLine("Encoding " + Encoding.ASCII.GetString(data, 0, recv)); // konwertowanie bajtów na string, ktory wyswietlimy w konsoli
           
-            Random rnd = new Random(); //losowanie 
-            int check = rnd.Next(1, 50);
-            Console.WriteLine("Random number is: {0}", check);
 
             while (true)
             {
@@ -52,6 +51,8 @@ namespace ServerUDPv2
                     Console.WriteLine("Client disconnected");
                     break;
                 }
+
+                Console.WriteLine("Success - Client connected");
 
                 data = new byte[1024];
                 recv = socket.ReceiveFrom(data, ref tmpRemote);
@@ -65,7 +66,9 @@ namespace ServerUDPv2
                  Console.WriteLine(Encoding.ASCII.GetString(data, 0, recv));
             }
         }
+
     }
+
 }
 
 //byte[] recevedBytes = socket.Receive();
