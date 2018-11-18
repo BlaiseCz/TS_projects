@@ -13,8 +13,32 @@ namespace Client_Asyn
     {
         uint data;
 
-        public void SetOperation(ref uint data, uint operation) //data - zmienna na której chcemy operować, operation - zmienna która chcemy wrzucic do pola Operation
+        uint Convertbyte3tobyte4(ref byte[] data_byte){
+            ///////////////////////////////////////// zamiana byte[] na uint
+            uint data = 0;
+            byte[] to_uint = new byte[4];
+
+            to_uint[0] = 0;
+            to_uint[1] = data_byte[0];
+            to_uint[2] = data_byte[1];
+            to_uint[3] = data_byte[2];
+
+            data = BitConverter.ToUInt32(to_uint, 0);
+            /////////////////////////////////////////
+            return data;
+        }
+
+        void Convertbyte4tobyte3(ref byte[] data_byte, uint data){
+            byte[] tmp = BitConverter.GetBytes(data);
+            data_byte[2] = tmp[3];
+            data_byte[1] = tmp[2];
+            data_byte[0] = tmp[1];
+        }
+
+        public void SetOperation(ref byte[] data_byte, uint operation) //data - zmienna na której chcemy operować, operation - zmienna która chcemy wrzucic do pola Operation
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+            Console.Write("\nSet operation data: " + data);
 
             if (operation > 63) //jezeli liczba jest za duza - przekracza 6 bitów - nie wykonuje tej funkcji
                 return; //wychodzi z funkcji
@@ -30,11 +54,15 @@ namespace Client_Asyn
 
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
-            data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacj
+            data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacji
+
+            Convertbyte4tobyte3(ref data_byte, data);
         }
 
-        public uint GetOperation(ref uint data)
+        public uint GetOperation(ref byte[] data_byte)
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
             const uint mask = 0b11111100000000000000000000000000; //moja maska pola operacji
             this.data = data;
             uint tmp = data;
@@ -42,8 +70,10 @@ namespace Client_Asyn
             return tmp >> 26;
         }
 
-        public void SetAnswer(ref uint data, uint answer) //data - zmienna na której chcemy operować, Answer - zmienna która chcemy wrzucic do pola answer
+        public void SetAnswer(ref byte[] data_byte, uint answer) //data - zmienna na której chcemy operować, Answer - zmienna która chcemy wrzucic do pola answer
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
             if (answer > 15) //jezeli liczba jest za duza - przekracza 4 bity - nie wykonuje tej funkcji
                 return; //wychodzi z funkcji
 
@@ -59,10 +89,16 @@ namespace Client_Asyn
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
             data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
+
+
+            //////////////////////////////////zamiana byte[4] na byte[3]
+            Convertbyte4tobyte3(ref data_byte, data);
         }
 
-        public uint GetAnswer(ref uint data)
+        public uint GetAnswer(ref byte[] data_byte)
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
             const uint mask = 0b00000011110000000000000000000000; //moja maska pola answer
             this.data = data;
             uint tmp = data;
@@ -70,8 +106,11 @@ namespace Client_Asyn
             return tmp >> 22;
         }
 
-        public void SetID(ref uint data, uint id) //data - zmienna na której chcemy operować, id - zmienna która chcemy wrzucic do pola identyfikator
+        public void SetID(ref byte[] data_byte, uint id) //data - zmienna na której chcemy operować, id - zmienna która chcemy wrzucic do pola identyfikator
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
+
             if (id > 255) //jezeli liczba ID jest za duza - przekracza 8 bitów - nie wykonuje tej funkcji
                 return; //wychodzi z funkcji
 
@@ -87,10 +126,15 @@ namespace Client_Asyn
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
             data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
+
+            //////////////////////////////////zamiana byte[4] na byte[3]
+            Convertbyte4tobyte3(ref data_byte, data);
         }
 
-        public uint GetID(ref uint data)
+        public uint GetID(ref byte[] data_byte)
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
             const uint mask = 0b00000000001111111100000000000000; //moja maska pola id
             this.data = data;
             uint tmp = data;
@@ -98,10 +142,11 @@ namespace Client_Asyn
             return tmp >> 14;
         }
 
-        public void SetACK(ref uint data, uint state)
+        public void SetACK(ref byte[] data_byte, uint state)
         {
-            if (state > 1) //jezeli liczba ID jest za duza - przekracza 8 bitów - nie wykonuje tej funkcji
-                return; //wychodzi z funkcji
+
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
 
             this.data = data;
             const uint mask = 0b00000000000000000010000000000000; //moja maska flagi ACK
@@ -115,10 +160,16 @@ namespace Client_Asyn
             uint x = data & negM; // liczba z zapisanymi innymi polami niż pole operacji. Pole operacji jest puste
 
             data = x | y; //operacja OR na liczba z zapisanymi polami wszystkimi innymi niz operacji i tym z operacja
+
+            //////////////////////////////////zamiana byte[4] na byte[3]
+            Convertbyte4tobyte3(ref data_byte, data);
+
         }
 
-        public uint GetACK(ref uint data)
+        public uint GetACK(ref byte[] data_byte)
         {
+            uint data = Convertbyte3tobyte4(ref data_byte);
+
             const uint mask = 0b00000000000000000010000000000000; //moja maska flagi ACK
             this.data = data;
             uint tmp = data;
@@ -136,14 +187,22 @@ namespace Client_Asyn
             return result;
         }
 
-        public void setAllFields(ref uint data, uint operation, uint answer, uint ID)
+        public void setAllFields(ref byte[] data_byte, uint operation, uint answer, uint ID, uint ACK)
         {
-            SetOperation(ref data, operation);
-            SetAnswer(ref data, answer);
-            SetID(ref data, ID);
+            SetOperation(ref data_byte, operation);
+            SetAnswer(ref data_byte, answer);
+            SetID(ref data_byte, ID);
+            SetACK(ref data_byte, ACK);
         }
 
-        public void printAllFields(ref uint data)
+        public void setAllFields(ref byte[] data_byte, uint operation, uint answer, uint ID)
+        {
+            SetOperation(ref data_byte, operation);
+            SetAnswer(ref data_byte, answer);
+            SetID(ref data_byte, ID);
+        }
+
+        public void printAllFields(ref byte[] data_byte)
         {
             Console.Write("Operation Field: {0}" +
                           "\nAnswer Field: {1}" +
@@ -153,22 +212,33 @@ namespace Client_Asyn
                           "\nBinary Operation Field: {5}" +
                           "\nBinary Answer Field: {6}" +
                           "\nBinary ID Field: {7}",
-                          GetOperation(ref data),
-                          GetAnswer(ref data),
-                          GetID(ref data),
-                          GetACK(ref data),
+                          GetOperation(ref data_byte),
+                          GetAnswer(ref data_byte),
+                          GetID(ref data_byte),
+                          GetACK(ref data_byte),
                           ConvertToBinary(data),
-                          ConvertToBinary(GetOperation(ref data)),
-                          ConvertToBinary(GetAnswer(ref data)),
-                          ConvertToBinary(GetID(ref data))
+                          ConvertToBinary(GetOperation(ref data_byte)),
+                          ConvertToBinary(GetAnswer(ref data_byte)),
+                          ConvertToBinary(GetID(ref data_byte))
                           );
+        }
+
+        public void printImpFields(ref byte[] data_byte)
+        {
+            Console.WriteLine("ID: {0}," +
+                              "\nAnswer: {1}" +
+                              "\nOperation: {2}",
+                              GetID(ref data_byte),
+                              GetAnswer(ref data_byte),
+                              GetOperation(ref data_byte)
+                             );
         }
 
         public uint ByteToUint(ref byte[] to_convert)
         {
             //if (BitConverter.IsLittleEndian) //zamieniamy liczbe zapisaną w tablicy z danymi z formatu LittleEndian na BigEndian
             //    Array.Reverse(to_convert);
-            return BitConverter.ToUInt32(to_convert, 0); //konwersja z bytep[] na uint
+            return BitConverter.ToUInt32(to_convert, 0); //konwersja z byte[] na uint
             //return Convert.ToUInt32(to_convert); //konwersja z bytep[] na uint
         }
 
