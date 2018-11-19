@@ -12,27 +12,37 @@ namespace Server_Asyn
     class Server
     {
 
-        const uint K_UZYSK_ID = 1;
-        const uint S_UZYSK_ID = 2;
+        const uint ID_REQUST = 1; //odbiera jesli klient chce nadania ID
+        const uint ID_SENT = 2; //wysyla takie polecenie, jezeli nadano ID
+        const uint NUMB_SEND = 3; //odbiera jesli klient wyslal liczbe
+        const uint ANSWER_CONFIRM = 4; //odpowiada na pytanie czy zgadnieto
+        const uint END_CONNCECTION = 5; //jesli klient opuszcza polaczenie wysylana jest taka informacja
+        const uint TEN_SEC_REMIND = 6; //wywołanie przypomnienia
+        const uint TIME_END = 7; //wysla jesli w zadanym czasie nie zgadnieto
+        const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe
+
 
         IntOperations operations = new IntOperations();
         private readonly int PORT = 8080; //ustawiamy port na jakim włączamy serwer
         private UdpClient client; //deklaracja clienta UDP
-        private readonly int BYTES_TO_SEND = 4; //jaka dlugosc pola danych w bajtach chcemy wyslac
-        IDictionary map = new Dictionary<uint, IPEndPoint>(); //to bedzie do przechowywania informacji o podlaczonych klientach
+        private readonly int BYTES_TO_SEND = 3; //jaka dlugosc pola danych w bajtach chcemy wyslac
+
+        //to trzeba zmienic bo nie współpracuje z foreach'em na vektor
+        List<ConnectedClient> clients = new List<ConnectedClient>();
         public List<ReceivedData> receiveds = new List<ReceivedData>();
+        uint secretNumber = 11;
 
         //konstuktor
         Server(){
             this.client = new UdpClient(PORT); //ustawiamy port dla clienta
-
         }
 
         public void Send(uint answer, uint operation, uint ID, IPEndPoint endPoint)
         {
             byte[] bytes_to_send = new byte[3]; //to wysylam
             operations.setAllFields(ref bytes_to_send, operation, answer, ID, 0); //ustawiam pola do wyslania
-            client.Send(bytes_to_send, 3, endPoint); //wysyla byte[3]
+            client.Send(bytes_to_send, BYTES_TO_SEND, endPoint); //wysyla byte[3]
+            Console.WriteLine("Wyslano");
         }
 
         private uint GenerateID(){
@@ -40,24 +50,36 @@ namespace Server_Asyn
             return (uint)rand.Next(0, 255);
         }
 
-        //do faktycznej obslugi
-        private void OperateRequest(ReceivedData data){
-            byte[] recvd_data = data.getData();
-            IPEndPoint endPoint = data.GetEndPoint();
+        //do faktycznej obslugi requestow
+        private void OperateRequest(ReceivedData data)
+        {
+            byte[] recvd_data = data.getData(); //wyluskuje odebrane bajty 
+            IPEndPoint endPoint = data.GetEndPoint(); //wyluskuje endpoint z ktorego zostala informacja odebrana
 
             uint operation = operations.GetOperation(ref recvd_data);
-            switch(operation){
-                case 1:
-                    uint generatedID = GenerateID();
-                    Send(0, 2, generatedID, endPoint);
+            switch(operation)
+            {
+                //Obsluga requestu dot. nadania ID
+                case ID_REQUST:
+                    uint generatedID = GenerateID(); //generuje ID
+                    Send(0, ID_SENT, generatedID, endPoint); //wysyla z poleceniem ID_SENT
+                    Send(0, NUMB_REQUEST, generatedID, endPoint);
+                    clients.Add(new ConnectedClient(generatedID, endPoint)); //tutaj dodaje do mapy endpoint i ID sesji
+
+                    foreach(ConnectedClient cl in clients){
+                        Console.WriteLine(cl.getID() + "  " + cl.getEndpoint().Address);
+                    }
+                    break;
+
+                    //obebrano liczbe
+                case NUMB_SEND:
                     break;
             }
         }
 
-
         //do przesiania requestow
         private void ManageRequests(){
-            Console.WriteLine("Request Manager Started");
+            //Console.WriteLine("Request Manager Started");
             IntOperations operations = new IntOperations();
             byte[] recvd_data = new byte[3];
             //jezeli dane maja ACK = 1 nic z nimi nie rob
@@ -83,14 +105,14 @@ namespace Server_Asyn
             }
         }
 
-
         public void Receive()
         {
             while(true){
                 IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0); //endpoint
                 byte[] receivedBytes = client.Receive(ref RemoteIpEndPoint); //bajty, do których zapisujemy to co otrzymalismy
-                operations.printAllFields(ref receivedBytes); //drukuje to co otrzymal
+                operations.printImpFields(ref receivedBytes); //drukuje to co otrzymal
                 receiveds.Add(new ReceivedData(receivedBytes, RemoteIpEndPoint)); //wrzuca otrzymany wynik razem z EndPointerm do Tablicy Oderbanych danych
+                Console.WriteLine("Odebrano");
             }
         }
          
@@ -107,13 +129,10 @@ namespace Server_Asyn
 
             while (true)
             {
-                
                 //Console.Write(".");
                 Thread.Sleep(1000);
-                Console.WriteLine("Dlugosc tablicy z odebranymi danymi: " + server.receiveds.Count);
+                //Console.WriteLine("Dlugosc tablicy z odebranymi danymi: " + server.receiveds.Count);
                 server.ManageRequests();
-
-                //server.ManageRequests();
             }
         }
     }

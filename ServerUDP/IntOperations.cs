@@ -40,7 +40,7 @@ namespace Server_Asyn
         public void SetOperation(ref byte[] data_byte, uint operation) //data - zmienna na której chcemy operować, operation - zmienna która chcemy wrzucic do pola Operation
         {
             uint data = Convertbyte3tobyte4(ref data_byte);
-            Console.Write("\nSet operation data: " + data);
+            //Console.Write("\nSet operation data: " + data);
 
             if (operation > 63) //jezeli liczba jest za duza - przekracza 6 bitów - nie wykonuje tej funkcji
                 return; //wychodzi z funkcji

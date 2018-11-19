@@ -8,6 +8,7 @@ namespace Server_Asyn
         byte[] receivedData;
         IPEndPoint endPoint;
 
+
         public ReceivedData(byte[] data, IPEndPoint endPoint)
         {
             this.receivedData = data;
