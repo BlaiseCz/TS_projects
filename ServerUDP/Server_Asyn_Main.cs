@@ -20,6 +20,7 @@ namespace Server_Asyn
         const uint TEN_SEC_REMIND = 6; //wywołanie przypomnienia
         const uint TIME_END = 7; //wysla jesli w zadanym czasie nie zgadnieto
         const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe
+        const uint SECND_CLIENT_AWAIT = 9; //wysylane jezeli nie jest polaczony drugi klient
 
 
         IntOperations operations = new IntOperations();
@@ -27,10 +28,10 @@ namespace Server_Asyn
         private UdpClient client; //deklaracja clienta UDP
         private readonly int BYTES_TO_SEND = 3; //jaka dlugosc pola danych w bajtach chcemy wyslac
 
-        //to trzeba zmienic bo nie współpracuje z foreach'em na vektor
-        List<ConnectedClient> clients = new List<ConnectedClient>();
-        public List<ReceivedData> receiveds = new List<ReceivedData>();
-        uint secretNumber = 11;
+      
+        List<ConnectedClient> clients = new List<ConnectedClient>(); //lista przechowujaca polaczonych klientow - ID i endpoint
+        public List<ReceivedData> receiveds = new List<ReceivedData>(); //list przechowujaca dane odebrane od klientow
+        uint secretNumber = 11; //liczba tajna - dorobic metode generujaca ja z przedzialu 0 - 15
 
         //konstuktor
         Server(){
@@ -66,13 +67,16 @@ namespace Server_Asyn
                     Send(0, NUMB_REQUEST, generatedID, endPoint);
                     clients.Add(new ConnectedClient(generatedID, endPoint)); //tutaj dodaje do mapy endpoint i ID sesji
 
-                    foreach(ConnectedClient cl in clients){
-                        Console.WriteLine(cl.getID() + "  " + cl.getEndpoint().Address);
+                    //drukuje dodanych do struktury klientow:
+                    Console.WriteLine("Klienci: ");
+                    foreach (ConnectedClient cl in clients){
+                        Console.WriteLine("ID: {0}, IP: {1}", cl.getID(), cl.getEndpoint().Address);
                     }
                     break;
 
                     //obebrano liczbe
                 case NUMB_SEND:
+                    //odsyla info z operacja ANSWER_CONFIRM i uzupelnionym polem operacji odpowiednio
                     break;
             }
         }
@@ -80,7 +84,6 @@ namespace Server_Asyn
         //do przesiania requestow
         private void ManageRequests(){
             //Console.WriteLine("Request Manager Started");
-            IntOperations operations = new IntOperations();
             byte[] recvd_data = new byte[3];
             //jezeli dane maja ACK = 1 nic z nimi nie rob
             //jezeli inaczej - rob to co masz zrobic i odeslij to samo z ACK
@@ -93,15 +96,13 @@ namespace Server_Asyn
                 {
                     operations.SetACK(ref recvd_data, 1); //odsylam potwierdzenie odbioru
                     client.Send(recvd_data, 3, receiveds[0].GetEndPoint()); // -//-
-                    OperateRequest(receiveds[0]); //przechodze do wlasciwej funkcji obslugi requestow - sciagam ostatni request
+                    OperateRequest(receiveds[0]); //przechodze do wlasciwej funkcji obslugi requestow a potem sciagam ostatni request
                 }
 
                 else //jezeli ACK = 1, no to nie robi nic
-                {
-                    Console.WriteLine("Klient cos potwierdzil");
-                }
+                    Console.WriteLine("Klient cos potwierdzil"); //w sumie to niewazne co potwierdza
 
-                receiveds.RemoveAt(0); // usuwa, bo zostalo obsluzone
+                receiveds.RemoveAt(0); // usuwa ostatni request, bo zostalo obsluzone
             }
         }
 
@@ -115,6 +116,16 @@ namespace Server_Asyn
                 Console.WriteLine("Odebrano");
             }
         }
+
+        //jezeli dwoch klientow bedzie polaczonych, to trzeba wystartować watek z ta metoda
+        public void Inform(){
+            uint TimeLeft = 0; //tutaj trzeba zachować czas do końca sesji
+            Thread.Sleep(10000); //usypia watek na 10sek.
+            foreach(ConnectedClient cl in clients) //do kazdego połączonego klienta wysyla info, że zostalo TimeLeft czasu do konca rozgrywki
+            {
+                Send(TimeLeft, TEN_SEC_REMIND, cl.getID(), cl.getEndpoint());
+            }
+        }
          
 
         public static void Main(string[] args)
@@ -123,16 +134,24 @@ namespace Server_Asyn
 
             Server server = new Server();
 
-            Thread recv_thr = new Thread(server.Receive);
-            recv_thr.Start();
+            Thread recv_thr = new Thread(server.Receive); //tworzy watek nasłuchujacy
+            recv_thr.Start(); //startuje nasluchujacy watek
 
 
             while (true)
             {
                 //Console.Write(".");
-                Thread.Sleep(1000);
-                //Console.WriteLine("Dlugosc tablicy z odebranymi danymi: " + server.receiveds.Count);
-                server.ManageRequests();
+                Thread.Sleep(1000); //a to po to, żeby się to wszystko tak szybko w konsoli nie działo - można zmniejszyc docelowo
+
+                if(server.clients.Count > 1) //jezeli podlaczonych jest wiecej niz jeden klient mozna startowac z obsluga
+                    server.ManageRequests();
+
+                else //jezeli nie podlaczonych jest dwoch klientow, trzeba przeslac do ewentualnych klientow, że czekamy
+                {
+                    Thread.Sleep(1000); //zeby nie zasypywac klienta spamem o tym, że czekamy na drugiego klienta
+                    //wyslij informacje o tym, ze czekamy na drugiego klienta - kod operacji SECND_CLIENT_AWAIT
+                }
+
             }
         }
     }
