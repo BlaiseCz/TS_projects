@@ -18,20 +18,19 @@ namespace Client_Asyn
         const uint TIME_END = 7; //odbiera jesli w zadanym czasie nie zgadnieto TICKs
         const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe TICK
         const uint SECND_CLIENT_AWAIT = 9; //wysylane jezeli nie jest polaczony drugi klient TICK
-        const uint TIME_REM_HUNDREDS = 10; 
+        const uint TIME_REM_HUNDREDS = 12; 
         const uint TIME_REM_TENS = 11;
-        const uint TIME_REM_UNITY = 12;
+        const uint TIME_REM_UNITY = 10;
 
         IntOperations operations = new IntOperations();
-        readonly string IP_ADDR_SERVER = "127.0.0.1";
+        string IP_ADDR_SERVER = "";
         readonly int PORT = 8080;
         IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0); //endpoint
         private UdpClient client; //deklaracja clienta UDP
         private readonly int BYTES_TO_SEND = 3; //jaka dlugosc pola danych w bajtach chcemy wyslac
         uint ID; //ID klienta
         public List<ReceivedData> receiveds = new List<ReceivedData>();
-        List<bool> TimeLeftBool = new List<bool>(3);
-        uint TimeLeft = 0;
+        char[] TimeLeft = new char[3];
 
         Client(){
             Console.WriteLine("Podaj Adres IP serwera ");
@@ -45,23 +44,22 @@ namespace Client_Asyn
             Console.WriteLine(RemoteIpEndPoint.AddressFamily);
         }
 
-        private void TimeLeftManage(int j){
-            TimeLeftBool[j] = true; //Oznacza pewna czesc liczby jako ustawiona
-
-            foreach(bool tmp in TimeLeftBool){
-                if (tmp == true) { } //jak wszystkie sa TRUE - przejdz dalej
-                else return; //jezeli nie wszystkie sa TRUE - wyjdz z funkcji
+        private void TimeLeftManage(int j, uint time){
+            if(time < 10){
+                TimeLeft[j] = Convert.ToChar(time);
+                Console.WriteLine(time);
+                Console.WriteLine(Convert.ToChar(time));
             }
-
-            Console.WriteLine("Time Left: {0}", TimeLeft);
-
-            TimeLeft = 0; // jak juz wyswietlono ta liczbe, to ponownie ustawiam ja jako 0
-
-            // i zeruje flagi tej liczby
-            for (int i = 0; i < 3; i++)
+            else
             {
-                TimeLeftBool[i] = false;
+                TimeLeft[j] = '-'; 
             }
+
+            Console.WriteLine("Time Left: {2}{1}{0}",
+                              TimeLeft[2],
+                              TimeLeft[1],
+                              TimeLeft[0]);
+
         }
 
         public void Send(uint answer, uint operation){
@@ -74,11 +72,11 @@ namespace Client_Asyn
         {
             while (true)
             {
-                IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0); //endpoint
-                byte[] receivedBytes = client.Receive(ref RemoteIpEndPoint); //bajty, do których zapisujemy to co otrzymalismy
+                IPEndPoint RemoteIpEndPoint_ = new IPEndPoint(IPAddress.Any, 0); //endpoint
+                byte[] receivedBytes = client.Receive(ref RemoteIpEndPoint_); //bajty, do których zapisujemy to co otrzymalismy
                 //operations.printAllFields(ref receivedBytes); //drukuje to co otrzymal
 
-                receiveds.Add(new ReceivedData(receivedBytes, RemoteIpEndPoint)); //wrzuca otrzymany wynik razem z EndPointerm do Tablicy Oderbanych danych
+                receiveds.Add(new ReceivedData(receivedBytes, RemoteIpEndPoint_)); //wrzuca otrzymany wynik razem z EndPointerm do Tablicy Oderbanych danych
             }
         }
 
@@ -86,7 +84,7 @@ namespace Client_Asyn
         void OperateRequest(ReceivedData data)
         {
             byte[] recvd_data = data.getData();
-            IPEndPoint endPoint = data.GetEndPoint();
+            IPEndPoint endPoint_ = data.GetEndPoint();
 
             uint operation = operations.GetOperation(ref recvd_data);
             switch (operation)
@@ -94,6 +92,7 @@ namespace Client_Asyn
                 case ID_SENT:
                     Console.WriteLine("ID request sent");
                     ID = operations.GetID(ref recvd_data);
+                    Console.WriteLine("My ID: {0}", ID);
                     break;
 
                 case NUMB_REQUEST:
@@ -125,18 +124,15 @@ namespace Client_Asyn
                     break;
 
                 case TIME_REM_UNITY:
-                    TimeLeft += operations.GetAnswer(ref recvd_data);
-                    TimeLeftManage(0);
+                    TimeLeftManage(0, operations.GetAnswer(ref recvd_data));
                     break;
 
                 case TIME_REM_TENS:
-                    TimeLeft += 10 * operations.GetAnswer(ref recvd_data);
-                    TimeLeftManage(1);
+                    TimeLeftManage(1, operations.GetAnswer(ref recvd_data));
                     break;
 
                 case TIME_REM_HUNDREDS:
-                    TimeLeft += 100 * operations.GetAnswer(ref recvd_data);
-                    TimeLeftManage(2);
+                    TimeLeftManage(2, operations.GetAnswer(ref recvd_data));
                     break;
             }
         }
@@ -180,7 +176,7 @@ namespace Client_Asyn
             client.Send(0, ID_REQUST); //prosba o uzyskanie ID sesji
 
             while(true){
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
                 client.ManageRequests();
             }
         }
