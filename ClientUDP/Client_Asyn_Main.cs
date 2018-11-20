@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -10,15 +10,17 @@ namespace Client_Asyn
     class Client
     {
         //kody pol operacji
-        const uint ID_REQUST = 1; //wysyla jesli klient chce nadania ID
-        const uint ID_SENT = 2; //odbiera takie polecenie, jezeli nadano ID
-        const uint NUMB_SEND = 3; //wysyla jesli klient wyslal liczbe
-        const uint ANSWER_CONFIRM = 4; //odbiera i odpowiada na pytanie czy zgadnieto
-        const uint END_CONNCECTION = 5; //jesli klient opuszcza polaczenie wysylana jest taka informacja
-        const uint TEN_SEC_REMIND = 6; //wywołanie przypomnienia
-        const uint TIME_END = 7; //odbiera jesli w zadanym czasie nie zgadnieto
-        const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe
-        const uint SECND_CLIENT_AWAIT = 9; //wysylane jezeli nie jest polaczony drugi klient
+        const uint ID_REQUST = 1; //wysyla jesli klient chce nadania ID TICK
+        const uint ID_SENT = 2; //odbiera takie polecenie, jezeli nadano ID TICK
+        const uint NUMB_SEND = 3; //wysyla jesli klient wyslal liczbe TICK
+        const uint ANSWER_CONFIRM = 4; //odbiera i odpowiada na pytanie czy zgadnieto TICK
+        const uint END_CONNCECTION = 5; //jesli klient opuszcza polaczenie wysylana jest taka informacja TICK
+        const uint TIME_END = 7; //odbiera jesli w zadanym czasie nie zgadnieto TICKs
+        const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe TICK
+        const uint SECND_CLIENT_AWAIT = 9; //wysylane jezeli nie jest polaczony drugi klient TICK
+        const uint TIME_REM_HUNDREDS = 10; 
+        const uint TIME_REM_TENS = 11;
+        const uint TIME_REM_UNITY = 12;
 
         IntOperations operations = new IntOperations();
         readonly string IP_ADDR_SERVER = "127.0.0.1";
@@ -28,7 +30,8 @@ namespace Client_Asyn
         private readonly int BYTES_TO_SEND = 3; //jaka dlugosc pola danych w bajtach chcemy wyslac
         uint ID; //ID klienta
         public List<ReceivedData> receiveds = new List<ReceivedData>();
-
+        List<bool> TimeLeftBool = new List<bool>(3);
+        uint TimeLeft = 0;
 
         Client(){
             Console.WriteLine("Podaj Adres IP serwera ");
@@ -40,6 +43,25 @@ namespace Client_Asyn
             client = new UdpClient(IP_ADDR_SERVER, PORT); //tworzy klienta
             ID = 0; //narazie na sztywno
             Console.WriteLine(RemoteIpEndPoint.AddressFamily);
+        }
+
+        private void TimeLeftManage(int j){
+            TimeLeftBool[j] = true; //Oznacza pewna czesc liczby jako ustawiona
+
+            foreach(bool tmp in TimeLeftBool){
+                if (tmp == true) { } //jak wszystkie sa TRUE - przejdz dalej
+                else return; //jezeli nie wszystkie sa TRUE - wyjdz z funkcji
+            }
+
+            Console.WriteLine("Time Left: {0}", TimeLeft);
+
+            TimeLeft = 0; // jak juz wyswietlono ta liczbe, to ponownie ustawiam ja jako 0
+
+            // i zeruje flagi tej liczby
+            for (int i = 0; i < 3; i++)
+            {
+                TimeLeftBool[i] = false;
+            }
         }
 
         public void Send(uint answer, uint operation){
@@ -61,7 +83,7 @@ namespace Client_Asyn
         }
 
         //do faktycznej obslugi
-        private void OperateRequest(ReceivedData data)
+        void OperateRequest(ReceivedData data)
         {
             byte[] recvd_data = data.getData();
             IPEndPoint endPoint = data.GetEndPoint();
@@ -70,22 +92,58 @@ namespace Client_Asyn
             switch (operation)
             {
                 case ID_SENT:
-                    Console.WriteLine("Wyslano ID");
+                    Console.WriteLine("ID request sent");
                     ID = operations.GetID(ref recvd_data);
                     break;
 
                 case NUMB_REQUEST:
-                    Console.WriteLine("Podaj liczbe: ");
+                    Console.WriteLine("Give me a number: ");
                     uint Answer = Convert.ToUInt32(Console.ReadLine());
                     Send(Answer, NUMB_SEND);
+                    break;
+
+                case ANSWER_CONFIRM:
+                    if(operations.GetAnswer(ref recvd_data) == 1)
+                    {
+                        Console.WriteLine("Correct number ;)");
+                        Send(0, END_CONNCECTION);
+                        Console.WriteLine("Closing connection...");
+                        this.client.Close();
+                    }
+                    else{
+                        Console.WriteLine("Wrong number...");
+                    }
+                    break;
+                                 
+                case TIME_END:
+                    Console.WriteLine("Time's up! I'm closing client :(");
+                    client.Close();
+                    break;
+
+                case SECND_CLIENT_AWAIT:
+                    Console.WriteLine("Waiting for another client. Please wait");
+                    break;
+
+                case TIME_REM_UNITY:
+                    TimeLeft += operations.GetAnswer(ref recvd_data);
+                    TimeLeftManage(0);
+                    break;
+
+                case TIME_REM_TENS:
+                    TimeLeft += 10 * operations.GetAnswer(ref recvd_data);
+                    TimeLeftManage(1);
+                    break;
+
+                case TIME_REM_HUNDREDS:
+                    TimeLeft += 100 * operations.GetAnswer(ref recvd_data);
+                    TimeLeftManage(2);
                     break;
             }
         }
 
-        private void ManageRequests()
+        void ManageRequests()
         {
             //Console.WriteLine("Request Manager Started");
-            IntOperations operations = new IntOperations();
             byte[] recvd_data = new byte[3];
             //jezeli dane maja ACK = 1 nic z nimi nie rob
             //jezeli inaczej - rob to co masz zrobic i odeslij to samo z ACK
@@ -103,7 +161,7 @@ namespace Client_Asyn
 
                 else //jezeli ACK = 1, no to nie robi nic
                 {
-                    Console.WriteLine("Serwer cos potwierdzil");
+                    Console.WriteLine("Server confirmed sth");
                 }
 
                 receiveds.RemoveAt(0); // usuwa, bo zostalo obsluzone
@@ -113,13 +171,13 @@ namespace Client_Asyn
         public static void Main(string[] args)
         {
             IntOperations operations = new IntOperations();
-            Console.WriteLine("Client running...");
+            Console.WriteLine("Client is running...");
             Client client = new Client();
 
             Thread recv_thr = new Thread(client.Receive);
             recv_thr.Start();
 
-            client.Send(0, 1); //prosba o uzyskanie ID sesji
+            client.Send(0, ID_REQUST); //prosba o uzyskanie ID sesji
 
             while(true){
                 Thread.Sleep(1000);
