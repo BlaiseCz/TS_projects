@@ -17,7 +17,6 @@ namespace Server_Asyn
         private const uint NUMB_RCV = 3; //odbiera jesli klient wyslal liczbe
         private const uint ANSWER_CONFIRM = 4; //odpowiada na pytanie czy zgadnieto
         private const uint END_CONNCECTION = 5; //jesli klient opuszcza polaczenie wysylana jest taka informacja
-        private const uint TEN_SEC_REMIND = 6; //wywołanie przypomnienia
         private const uint TIME_END = 7; //wysyla jesli w zadanym czasie nie zgadnieto
         private const uint NUMB_REQUEST = 8; //wysylane jesli chce, aby klient wyslal liczbe
         private const uint SECND_CLIENT_AWAIT = 9; //wysylane jezeli nie jest polaczony drugi klient
@@ -63,7 +62,7 @@ namespace Server_Asyn
             byte[] bytes_to_send = new byte[3]; //to wysylam
             operations.setAllFields(ref bytes_to_send, operation, answer, ID, 0); //ustawiam pola do wyslania
             server.Send(bytes_to_send, BYTES_TO_SEND, endPoint); //wysyla byte[3]
-            Console.WriteLine("Send! Operation number: {0}", operation );
+            Console.WriteLine("Send! Operation number: {0}", operation);
         }
 
         private uint GenerateID()
@@ -122,20 +121,6 @@ namespace Server_Asyn
                         Send(1, END_CONNCECTION, ID, endPoint);
                         Console.WriteLine("Client left..");
                     break;
-
-                case TEN_SEC_REMIND:
-                        Console.WriteLine("10s reminder..");
-                        Send(0, TEN_SEC_REMIND, ID, endPoint);
-                    break;
-
-                case TIME_END:
-                       
-                    break;
-
-                case SECND_CLIENT_AWAIT:
-                        Console.WriteLine("Waiting for second client...");
-                        Send(0, SECND_CLIENT_AWAIT, ID, endPoint);
-                    break;
             }
         }
 
@@ -178,7 +163,14 @@ namespace Server_Asyn
                     IsGameStarted = true;
                 }
                 else
-                    return;
+                {
+                    Thread.Sleep(1000);
+                    Console.WriteLine("Waiting for second client...");
+                    foreach (ConnectedClient cl in Clients)
+                    {
+                        Send(0, SECND_CLIENT_AWAIT, cl.getID(), cl.getEndpoint()); //w tym miejscu wysyla request, zeby klienci wyslali liczbe
+                    }
+                }
             }
         }
 
@@ -238,10 +230,11 @@ namespace Server_Asyn
                             try
                             {
                                 server.Close();
+                                Console.WriteLine("\nGame finished\nServer off!");
                             }
-                            catch (Exception e)
+                            catch (SocketException e)
                             {
-                                Console.WriteLine("{0}\n Game finished\nServer off!", e);
+                                //Console.WriteLine(e);
                             }
                         }
                     }
