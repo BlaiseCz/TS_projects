@@ -31,6 +31,7 @@ namespace Client_Asyn
         uint ID; //ID klienta
         public List<ReceivedData> receiveds = new List<ReceivedData>();
         char[] TimeLeft = new char[3];
+        int timeLeftTemp = 0;
 
         Client(){
             Console.WriteLine("Podaj Adres IP serwera ");
@@ -44,21 +45,25 @@ namespace Client_Asyn
             Console.WriteLine(RemoteIpEndPoint.AddressFamily);
         }
 
-        private void TimeLeftManage(int j, uint time){
+        //do wyswietlania pozostalego czasu
+        void TimeLeftManage(int j, uint time){
+            timeLeftTemp++;
+
             if(time < 10){
-                TimeLeft[j] = Convert.ToChar(time);
-                Console.WriteLine(time);
-                Console.WriteLine(Convert.ToChar(time));
+                TimeLeft[j] = Convert.ToChar(Convert.ToString(time)); //brzydko, ale zamienia
             }
             else
             {
-                TimeLeft[j] = '-'; 
+                TimeLeft[j] = ' '; 
             }
 
-            Console.WriteLine("Time Left: {2}{1}{0}",
-                              TimeLeft[2],
-                              TimeLeft[1],
-                              TimeLeft[0]);
+            if(timeLeftTemp%3 == 0){
+                Console.WriteLine("Time Left: {2}{1}{0}",
+                                  TimeLeft[0],
+                                  TimeLeft[1],
+                                  TimeLeft[2]);
+            }
+
 
         }
 
