@@ -20,9 +20,9 @@ namespace Server_Asyn
             byte[] to_uint = new byte[4];
 
             to_uint[0] = 0;
-            to_uint[1] = data_byte[0];
+            to_uint[1] = data_byte[2];
             to_uint[2] = data_byte[1];
-            to_uint[3] = data_byte[2];
+            to_uint[3] = data_byte[0];
 
             data = BitConverter.ToUInt32(to_uint, 0);
             /////////////////////////////////////////
@@ -32,9 +32,9 @@ namespace Server_Asyn
         void Convertbyte4tobyte3(ref byte[] data_byte, uint data)
         {
             byte[] tmp = BitConverter.GetBytes(data);
-            data_byte[2] = tmp[3];
+            data_byte[2] = tmp[1];
             data_byte[1] = tmp[2];
-            data_byte[0] = tmp[1];
+            data_byte[0] = tmp[3];
         }
 
         public void SetOperation(ref byte[] data_byte, uint operation) //data - zmienna na której chcemy operować, operation - zmienna która chcemy wrzucic do pola Operation
